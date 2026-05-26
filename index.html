@@ -253,13 +253,13 @@ async function loadMapsFromStorage(siteId){
     var imageFiles = files.filter(function(f){ return f.name && !f.name.endsWith('/') && f.id; });
     if(!imageFiles.length) return [];
     var maps = await Promise.all(imageFiles.map(async function(f){
-      var imgUrl = SB_URL+'/storage/v1/object/public/maps/'+siteId+'/'+f.name;
+      var imgUrl = SB_URL+'/storage/v1/object/public/maps/'+siteId+'/'+encodeURIComponent(f.name);
       var imgResp = await fetch(imgUrl);
       if(!imgResp.ok) return null;
       var blob = await imgResp.blob();
       return new Promise(function(res){
         var reader = new FileReader();
-        reader.onload = function(e){res({d:e.target.result, n:f.name})};
+        reader.onload = function(e){res({d:e.target.result, n:f.name, sn:f.name})};
         reader.readAsDataURL(blob);
       });
     }));
@@ -299,18 +299,22 @@ async function saveToDrive(){
 
 async function uploadMapToStorage(siteId, fileName, dataURL){
   try{
+    // Sanitize filename: remove special chars, replace spaces with underscore
+    var ext = fileName.split('.').pop().toLowerCase()||'jpg';
+    var safeName = Date.now()+'_'+Math.random().toString(36).slice(2)+'.'+ext;
     // Convert dataURL to blob
     var arr = dataURL.split(','), mime = arr[0].match(/:(.*?);/)[1];
     var bstr = atob(arr[1]), n = bstr.length, u8arr = new Uint8Array(n);
     while(n--) u8arr[n] = bstr.charCodeAt(n);
     var blob = new Blob([u8arr], {type:mime});
-    var resp = await fetch(SB_URL+'/storage/v1/object/maps/'+siteId+'/'+fileName, {
+    var resp = await fetch(SB_URL+'/storage/v1/object/maps/'+siteId+'/'+safeName, {
       method:'POST',
       headers:{'apikey':SB_KEY,'Authorization':'Bearer '+SB_KEY,'Content-Type':mime,'x-upsert':'true'},
       body:blob
     });
-    return resp.ok;
-  }catch(e){return false}
+    if(resp.ok) return safeName;
+    return null;
+  }catch(e){console.warn('upload error:',e);return null}
 }
 
 async function deleteMapFromStorage(siteId, fileName){
@@ -510,10 +514,17 @@ function loadMaps(files){
     var r=new FileReader();
     r.onload=function(ev){
       var dataURL=ev.target.result;
-      maps.push({d:dataURL,n:f.name});
+      var mapObj={d:dataURL,n:f.name};
+      maps.push(mapObj);
       renderMapList();
-      if(curId) uploadMapToStorage(curId,f.name,dataURL);
-      saveSite();
+      if(curId){
+        uploadMapToStorage(curId,f.name,dataURL).then(function(safeName){
+          if(safeName) mapObj.sn=safeName; // store safe name for deletion
+          saveSite();
+        });
+      } else {
+        saveSite();
+      }
     };
     r.readAsDataURL(f);
   });
@@ -528,7 +539,7 @@ function renderMapList(){
 }
 function removeMap(i){
   var m=maps[i];
-  if(m&&curId) deleteMapFromStorage(curId,m.n);
+  if(m&&curId) deleteMapFromStorage(curId,m.sn||m.n);
   maps.splice(i,1);renderMapList();saveSite();
 }
 function renderRoster(){
