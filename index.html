@@ -467,7 +467,8 @@ function parseSh(ws){
   var cMain=ci(['主建物面積']);
   var cSub=ci(['附屬建物面積']);
   var cBldg=ci(['建物權狀面積']);
-  var cM1amt=ci(['他項權利設定金額']);
+  var cM1amt=ci(['一順抵押設定金額','他項權利設定金額']);
+  var cM2amt=ci(['二順抵押設定金額']);
   var ds=hdrRow+1;
   while(ds<=range.e.r&&(
     (cOwner<0||!grid[ds][cOwner])&&(cDoor<0||!grid[ds][cDoor])
@@ -486,8 +487,10 @@ function parseSh(ws){
     if(String(no).indexOf('總計')>=0)continue;
     // Clean ping: remove '坪' suffix for numeric use, keep display string
     var pingDisp=ping;
+    var m1amt=gv(cM1amt),m2amt=gv(cM2amt);
     rows.push({no:no,area:area,ping:pingDisp,share:share,owner:ow,reg:reg,door:doo,visit:visit,
-      idNo:idNo,reason:reason,reasonDate:reasonDate,mainArea:mainArea,subArea:subArea,bldgArea:bldgArea});
+      idNo:idNo,reason:reason,reasonDate:reasonDate,mainArea:mainArea,subArea:subArea,bldgArea:bldgArea,
+      m1amt:m1amt,m2amt:m2amt});
   }
   return rows;
 }
@@ -551,7 +554,7 @@ function renderForm(row,ed,i,tot){
     ffe('建物權狀面積',ed.bA||row.bldgArea||'','bA')+ffe('主建物面積',ed.mA||row.mainArea||'','mA')+ffe('附屬建物面積',ed.sA||row.subArea||'','sA')+ffe('共 有 面 積',ed.shA,'shA')+'</div>'+
     '<div class="fb"><div class="fbt">★ 所有權人資訊</div>'+
     ffs('所 有 權 人',row.owner)+ffe('身 分 證 號',ed.id||row.idNo||'','id')+ffs('謄 本 地 址',row.reg)+
-    ffe('取 得 原 因',ed.re||row.reason||'','re')+ffe('原因發生日',ed.rd||row.reasonDate||'','rd')+ffe('一順抵押金額',ed.m1,'m1')+ffe('二順抵押金額',ed.m2,'m2')+'</div></div>'+
+    ffe('取 得 原 因',ed.re||row.reason||'','re')+ffe('原因發生日',ed.rd||row.reasonDate||'','rd')+ffe('一順抵押金額',ed.m1||row.m1amt||'','m1')+ffe('二順抵押金額',ed.m2||row.m2amt||'','m2')+'</div></div>'+
     '<div class="fr3">'+
     '<div class="fb"><div class="sh">過　去</div><div class="sf"><label>誰住：</label><input data-k="pw" value="'+esc(ed.pw)+'"></div></div>'+
     '<div class="fb"><div class="sh">現　況</div>'+
@@ -647,7 +650,7 @@ function drawPg(doc,row,ed,idx,tot,imgs){
     var sd=row.share?(parseFloat(row.share)||0).toFixed(2)+' 坪':'';
     [['土地地號',row.no],['土地面積',row.area||''],['轉 換 坪',row.ping||''],['土地持分',sd],['建物門牌',row.door],['建物權狀面積',ed.bA||row.bldgArea||''],['主建物面積',ed.mA||row.mainArea||''],['附屬建物面積',ed.sA||row.subArea||''],['共 有 面 積',ed.shA||'']].forEach(function(x,n){lb(x[0]+'：',L+14,s1Y+42+n*20);vv(x[1]||'',L+90,s1Y+42+n*20,midX-L-108)});
     bx(midX+4,s1Y,R-midX-4,s1H);ctx.font='bold 12px '+F;ctx.fillStyle='#1a1a1a';ctx.textAlign='left';ctx.fillText('★ 所有權人資訊',midX+18,s1Y+18);hl(midX+18,s1Y+24,R-14);
-    [['所 有 權 人',row.owner],['身 分 證 號',ed.id||row.idNo||''],['謄 本 地 址',row.reg],['取 得 原 因',ed.re||row.reason||''],['原 因 發 生 日',ed.rd||row.reasonDate||''],['一順抵押金額',ed.m1||''],['二順抵押金額',ed.m2||'']].forEach(function(x,n){lb(x[0]+'：',midX+18,s1Y+42+n*24);vv(x[1]||'',midX+100,s1Y+42+n*24,R-midX-116)});
+    [['所 有 權 人',row.owner],['身 分 證 號',ed.id||row.idNo||''],['謄 本 地 址',row.reg],['取 得 原 因',ed.re||row.reason||''],['原 因 發 生 日',ed.rd||row.reasonDate||''],['一順抵押金額',ed.m1||row.m1amt||''],['二順抵押金額',ed.m2||row.m2amt||'']].forEach(function(x,n){lb(x[0]+'：',midX+18,s1Y+42+n*24);vv(x[1]||'',midX+100,s1Y+42+n*24,R-midX-116)});
     var s2Y=s1Y+s1H+10,s2H=200,tw=Math.floor((R-L-16)/3),sX=[L,L+tw+8,L+(tw+8)*2];
     [0,1,2].forEach(function(s){bx(sX[s],s2Y,tw,s2H);sh(['過　去','現　況','未　來'][s],sX[s],s2Y,tw)});
     lb('誰住：',sX[0]+14,s2Y+48);vv(ed.pw||'',sX[0]+52,s2Y+48,tw-60);
