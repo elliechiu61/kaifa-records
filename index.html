@@ -487,7 +487,7 @@ function parseSh(ws){
     if(String(no).indexOf('總計')>=0)continue;
     // Clean ping: remove '坪' suffix for numeric use, keep display string
     var pingDisp=ping;
-    var m1amt=gv(cM1amt),m2amt=gv(cM2amt);
+    var m1amt=fmtMoney(gv(cM1amt)),m2amt=fmtMoney(gv(cM2amt));
     rows.push({no:no,area:area,ping:pingDisp,share:share,owner:ow,reg:reg,door:doo,visit:visit,
       idNo:idNo,reason:reason,reasonDate:reasonDate,mainArea:mainArea,subArea:subArea,bldgArea:bldgArea,
       m1amt:m1amt,m2amt:m2amt});
@@ -675,6 +675,12 @@ function drawPg(doc,row,ed,idx,tot,imgs){
 }
 function wrapCJK(ctx,text,x,y,maxW,lh,maxY){var line='',cy=y;for(var i=0;i<text.length;i++){var ch=text[i],t=line+ch;if(ctx.measureText(t).width>maxW&&line){if(cy>maxY)break;ctx.fillText(line,x,cy);line=ch;cy+=lh}else line=t}if(line&&cy<=maxY)ctx.fillText(line,x,cy)}
 function esc(v){return(v||'').replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}
+function fmtMoney(v){
+  if(!v||v==='無'||v==='无') return v||'';
+  var n=parseFloat(String(v).replace(/,/g,''));
+  if(isNaN(n)) return v;
+  return n.toLocaleString('zh-TW');
+}
 function showToast(msg){var t=g('toast');t.textContent=msg||'✓';t.classList.add('show');clearTimeout(window._t);window._t=setTimeout(function(){t.classList.remove('show')},1800)}
 </script>
 </body>
