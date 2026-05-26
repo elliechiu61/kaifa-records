@@ -240,16 +240,21 @@ async function loadFromSupabase(){
 
 async function loadMapsFromStorage(siteId){
   try{
-    var resp = await fetch(SB_URL+'/storage/v1/object/list/maps/'+siteId, {
+    // List files in the siteId folder
+    var resp = await fetch(SB_URL+'/storage/v1/object/list/maps', {
       method:'POST',
       headers:SB_HEADERS,
-      body:JSON.stringify({limit:20, offset:0})
+      body:JSON.stringify({prefix: siteId+'/', limit:50, offset:0})
     });
     if(!resp.ok) return [];
     var files = await resp.json();
     if(!files||!files.length) return [];
-    var maps = await Promise.all(files.map(async function(f){
-      var imgResp = await fetch(SB_URL+'/storage/v1/object/public/maps/'+siteId+'/'+f.name);
+    // Filter out folders
+    var imageFiles = files.filter(function(f){ return f.name && !f.name.endsWith('/') && f.id; });
+    if(!imageFiles.length) return [];
+    var maps = await Promise.all(imageFiles.map(async function(f){
+      var imgUrl = SB_URL+'/storage/v1/object/public/maps/'+siteId+'/'+f.name;
+      var imgResp = await fetch(imgUrl);
       if(!imgResp.ok) return null;
       var blob = await imgResp.blob();
       return new Promise(function(res){
@@ -259,7 +264,7 @@ async function loadMapsFromStorage(siteId){
       });
     }));
     return maps.filter(Boolean);
-  }catch(e){return []}
+  }catch(e){console.warn('loadMaps error:',e);return []}
 }
 
 async function saveToDrive(){
