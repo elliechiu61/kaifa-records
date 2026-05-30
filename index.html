@@ -112,6 +112,7 @@ textarea.bta{width:100%;border:none;background:transparent;font-family:inherit;f
       <span id="sbDot" style="width:7px;height:7px;border-radius:50%;background:#666;display:inline-block"></span>
       <span id="sbLabel">雲端</span>
     </span>
+    <button onclick="openChangePwModal()" style="color:#aaa;background:none;border:none;cursor:pointer;font-size:12px;font-family:inherit">修改密碼</button>
     <button onclick="logout()" style="color:#aaa;background:none;border:none;cursor:pointer;font-size:12px;font-family:inherit">登出</button>
   </div>
 
@@ -196,6 +197,19 @@ textarea.bta{width:100%;border:none;background:transparent;font-family:inherit;f
   <div id="editWrap" style="display:none;background:#f5f3ef">
     <div class="etop"><button class="bs bg" style="font-size:11px" onclick="backToRoster()">← 返回一覽</button><span style="font-size:12px;color:#666;flex:1" id="epi"></span><button class="bs bp" style="font-size:11px;padding:5px 12px" onclick="dlPDF()">⬇ 下載 PDF</button></div>
     <div class="fp" id="fp"></div>
+  </div>
+</div>
+
+<!-- CHANGE PASSWORD MODAL -->
+<div class="ov" id="changePwMv" style="display:none">
+  <div class="modal" style="width:340px">
+    <h3>修改我的密碼</h3>
+    <div class="mf"><label>新密碼 *</label><input id="changePwInput" type="password" placeholder="輸入新密碼" onkeydown="if(event.key==='Enter')saveChangePw()"></div>
+    <div style="color:#c0392b;font-size:12px;margin-top:6px;min-height:14px" id="changePwErr"></div>
+    <div class="ma">
+      <button class="bs bg" onclick="closeChangePwModal()">取消</button>
+      <button class="bs bp" onclick="saveChangePw()">確認修改</button>
+    </div>
   </div>
 </div>
 
@@ -837,6 +851,38 @@ async function loadAdmins(){
       return '<tr><td style="color:#aaa;font-size:11px">'+(i+1)+'</td><td>'+a.username+'</td><td>'+a.name+'</td><td>'+roleTag+'</td><td onclick="event.stopPropagation()" style="white-space:nowrap">'+delBtn+'</td></tr>';
     }).join('');
   }catch(e){console.warn('Load admins error:',e)}
+}
+
+// Change password modal
+function openChangePwModal(){
+  g('changePwInput').value='';
+  g('changePwErr').textContent='';
+  g('changePwMv').style.display='flex';
+  setTimeout(function(){g('changePwInput').focus()},100);
+}
+function closeChangePwModal(){ g('changePwMv').style.display='none'; }
+g('changePwMv').onclick = function(e){ if(e.target===this) closeChangePwModal(); };
+
+function saveChangePw(){
+  var pw = g('changePwInput').value.trim();
+  if(!pw){ g('changePwErr').textContent='請輸入新密碼'; return; }
+  g('changePwErr').textContent='更新中...';
+  fetch(SB_URL+'/rest/v1/admins?id=eq.'+me.id, {
+    method:'PATCH',
+    headers:Object.assign({},SB_HEADERS,{'Prefer':'return=minimal'}),
+    body:JSON.stringify({password:pw})
+  }).then(function(resp){
+    if(resp.ok){
+      me.password=pw;
+      for(var i=0;i<LOCAL_AC.length;i++){
+        if(LOCAL_AC[i].id===me.id) LOCAL_AC[i].password=pw;
+      }
+      closeChangePwModal();
+      showToast('✓ 密碼已更新');
+    } else {
+      g('changePwErr').textContent='更新失敗，請稍後再試';
+    }
+  }).catch(function(){ g('changePwErr').textContent='更新失敗，請稍後再試'; });
 }
 
 var editAdminId = null;
