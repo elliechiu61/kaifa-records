@@ -106,6 +106,7 @@ textarea.bta{width:100%;border:none;background:transparent;font-family:inherit;f
     <div class="brand">開發記錄表系統</div>
     <button id="btnAdmin" class="on" onclick="goAdmin()">後台管理</button>
     <button id="btnFront" style="display:none" onclick="goFront()">前台作業</button>
+    <button id="superMenu" style="display:none" onclick="goSuper()">⚙ 帳號管理</button>
     <span style="font-size:12px;color:#aaa" id="navun"></span>
     <span style="font-size:11px;color:#aaa;display:flex;align-items:center;gap:4px">
       <span id="sbDot" style="width:7px;height:7px;border-radius:50%;background:#666;display:inline-block"></span>
@@ -122,6 +123,27 @@ textarea.bta{width:100%;border:none;background:transparent;font-family:inherit;f
         <thead><tr><th style="width:40px">#</th><th>基地名稱</th><th style="width:110px">建檔日期</th><th>狀態</th><th style="width:80px">操作</th></tr></thead>
         <tbody id="stbody"></tbody>
       </table>
+    </div>
+  </div>
+
+  <!-- SUPER ADMIN PANEL -->
+  <div id="superWrap" style="display:none">
+    <div class="wrap">
+      <div class="hd"><h2>帳號管理</h2><button class="bs bp" onclick="openNewAdminModal()">＋ 新增管理員</button></div>
+      <div class="card" style="padding:0;overflow:hidden">
+        <table class="st" id="adminsTbl">
+          <thead><tr><th style="width:40px">#</th><th>帳號</th><th>名稱</th><th>角色</th><th style="width:80px">操作</th></tr></thead>
+          <tbody id="adminsTbody"></tbody>
+        </table>
+      </div>
+      <div class="card" style="margin-top:16px">
+        <div class="ctitle">修改我的密碼</div>
+        <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+          <input id="newPwInput" type="password" placeholder="新密碼" style="padding:8px 12px;border:1px solid #ddd;border-radius:6px;font-size:13px;flex:1;min-width:150px">
+          <button class="bs bp" onclick="changeMyPassword()">確認修改</button>
+          <span id="pwMsg" style="font-size:12px;color:#2a6a2a"></span>
+        </div>
+      </div>
     </div>
   </div>
 
@@ -152,6 +174,14 @@ textarea.bta{width:100%;border:none;background:transparent;font-family:inherit;f
         <div style="font-size:12px;text-align:center;margin-top:8px;min-height:18px;color:#888" id="sm1"></div>
       </div>
       <div class="card">
+        <div class="ctitle">修改密碼</div>
+        <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+          <input id="newPwInput2" type="password" placeholder="新密碼" style="padding:8px 12px;border:1px solid #ddd;border-radius:6px;font-size:13px;flex:1;min-width:150px">
+          <button class="bs bp" onclick="changeMyPassword2()">確認修改</button>
+          <span id="pwMsg2" style="font-size:12px;color:#2a6a2a"></span>
+        </div>
+      </div>
+      <div class="card">
         <div class="ctitle">⑤ 表單更新</div>
         <div id="rl" style="color:#aaa;font-size:13px;text-align:center;padding:20px">請先上傳 Excel 清冊</div>
         <div id="rr" style="display:none">
@@ -166,6 +196,21 @@ textarea.bta{width:100%;border:none;background:transparent;font-family:inherit;f
   <div id="editWrap" style="display:none;background:#f5f3ef">
     <div class="etop"><button class="bs bg" style="font-size:11px" onclick="backToRoster()">← 返回一覽</button><span style="font-size:12px;color:#666;flex:1" id="epi"></span><button class="bs bp" style="font-size:11px;padding:5px 12px" onclick="dlPDF()">⬇ 下載 PDF</button></div>
     <div class="fp" id="fp"></div>
+  </div>
+</div>
+
+<!-- NEW ADMIN MODAL -->
+<div class="ov" id="adminMv" style="display:none">
+  <div class="modal">
+    <h3>新增管理員</h3>
+    <div class="mf"><label>帳號 *</label><input id="newAdminU" type="text" placeholder="帳號"></div>
+    <div class="mf"><label>密碼 *</label><input id="newAdminP" type="password" placeholder="密碼"></div>
+    <div class="mf"><label>名稱 *</label><input id="newAdminN" type="text" placeholder="顯示名稱"></div>
+    <div style="color:#c0392b;font-size:12px;margin-top:6px;min-height:14px" id="newAdminErr"></div>
+    <div class="ma">
+      <button class="bs bg" onclick="closeNewAdminModal()">取消</button>
+      <button class="bs bp" onclick="createAdmin()">建立</button>
+    </div>
   </div>
 </div>
 
@@ -186,7 +231,6 @@ var SB_URL = 'https://exkutbjiquikghlqkbfj.supabase.co';
 var SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImV4a3V0YmppcXVpa2dobHFrYmZqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk4MDczMzYsImV4cCI6MjA5NTM4MzMzNn0.s26RHk7R_eRc-aUmorHqrVo8XySAwphOx4_T2eL0jPA';
 var SB_HEADERS = {'Content-Type':'application/json','apikey':SB_KEY,'Authorization':'Bearer '+SB_KEY};
 
-var AC=[{u:'admin',p:'admin123',n:'管理員'},{u:'user1',p:'user1pass',n:'業務A'},{u:'user2',p:'user2pass',n:'業務B'}];
 var sites=[],me=null,curId=null,exRows=[],edits=[],maps=[],curIdx=-1;
 function g(id){return document.getElementById(id)}
 
@@ -221,7 +265,8 @@ async function loadFromSupabase(){
           date: s.created_at,
           rows: s.excel_rows||[],
           edits: s.edits||[],
-          maps: maps
+          maps: maps,
+          owner: s.owner||'admin'
         };
       }));
       localStorage.setItem('kaifa', JSON.stringify({sites:sites}));
@@ -329,7 +374,7 @@ async function deleteMapFromStorage(siteId, fileName){
 async function createSiteInSupabase(site){
   try{
     await sbFetch('sites','POST',{
-      id:site.id, name:site.name, created_at:site.date, excel_rows:[], edits:[]
+      id:site.id, name:site.name, created_at:site.date, excel_rows:[], edits:[], owner:site.owner||'admin'
     });
     setSbStatus(true);
   }catch(e){console.warn('Create site error:',e);setSbStatus(false)}
@@ -341,16 +386,32 @@ async function deleteSiteFromSupabase(id){
   }catch(e){}
 }
 
-function doLogin(){
-  var u=g('inp-u').value.trim(),p=g('inp-pw').value,a=null;
-  for(var i=0;i<AC.length;i++)if(AC[i].u===u&&AC[i].p===p){a=AC[i];break}
-  if(!a){g('lerr').textContent='帳號或密碼錯誤';return}
-  me=a;g('navun').textContent=a.n;
-  g('pg-login').style.display='none';
-  g('pg-main').style.display='block';
-  // Load from local first as fallback, then sync from Supabase
-  try{var d=localStorage.getItem('kaifa');if(d){var p=JSON.parse(d);sites=p.sites||[];}renderSites();}catch(e){}
-  loadFromSupabase();
+async function doLogin(){
+  var u=g('inp-u').value.trim(),p=g('inp-pw').value;
+  if(!u||!p){g('lerr').textContent='請輸入帳號密碼';return}
+  g('lerr').textContent='登入中...';
+  try{
+    var data = await sbFetch('admins?username=eq.'+encodeURIComponent(u)+'&select=*','GET');
+    if(!data||!data.length||data[0].password!==p){
+      g('lerr').textContent='帳號或密碼錯誤';return;
+    }
+    me=data[0];
+    g('navun').textContent=me.name;
+    g('lerr').textContent='';
+    g('pg-login').style.display='none';
+    g('pg-main').style.display='block';
+    // Show/hide super admin features
+    if(me.role==='super'){
+      g('superMenu').style.display='';
+    } else {
+      g('superMenu').style.display='none';
+    }
+    try{var d=localStorage.getItem('kaifa');if(d){var p2=JSON.parse(d);sites=p2.sites||[];}renderSites();}catch(e){}
+    loadFromSupabase();
+  }catch(e){
+    g('lerr').textContent='登入失敗，請稍後再試';
+    console.warn('Login error:',e);
+  }
 }
 
 function logout(){
@@ -363,12 +424,32 @@ function logout(){
 }
 
 function goAdmin(){
-  g('btnAdmin').className='nav on';g('btnFront').className='nav';
-  g('adminWrap').style.display='block';g('frontWrap').style.display='none';g('editWrap').style.display='none';
+  g('btnAdmin').className='nav on';
+  if(g('btnFront')) g('btnFront').className='nav';
+  if(g('superMenu')) g('superMenu').className='nav';
+  g('adminWrap').style.display='block';
+  g('frontWrap').style.display='none';
+  g('editWrap').style.display='none';
+  if(g('superWrap')) g('superWrap').style.display='none';
 }
 function goFront(){
-  g('btnFront').className='nav on';g('btnAdmin').className='nav';
-  g('frontWrap').style.display='block';g('adminWrap').style.display='none';g('editWrap').style.display='none';
+  g('btnFront').className='nav on';
+  g('btnAdmin').className='nav';
+  if(g('superMenu')) g('superMenu').className='nav';
+  g('frontWrap').style.display='block';
+  g('adminWrap').style.display='none';
+  g('editWrap').style.display='none';
+  if(g('superWrap')) g('superWrap').style.display='none';
+}
+function goSuper(){
+  g('superMenu').className='nav on';
+  g('btnAdmin').className='nav';
+  g('btnFront').className='nav';
+  g('superWrap').style.display='block';
+  g('adminWrap').style.display='none';
+  g('frontWrap').style.display='none';
+  g('editWrap').style.display='none';
+  loadAdmins();
 }
 
 function saveData(){saveToDrive()}
@@ -396,7 +477,7 @@ function createSite(){
   if(!n){g('merr').textContent='請輸入基地名稱';return}
   if(sites.find(function(s){return s.name===n})){g('merr').textContent='名稱已存在';return}
   var d=new Date();
-  var newSite = {id:'s'+Date.now(),name:n,date:d.getFullYear()+'/'+(d.getMonth()+1)+'/'+d.getDate(),rows:[],edits:[],maps:[]};
+  var newSite = {id:'s'+Date.now(),name:n,date:d.getFullYear()+'/'+(d.getMonth()+1)+'/'+d.getDate(),rows:[],edits:[],maps:[],owner:me?me.username:'admin'};
   sites.push(newSite);
   createSiteInSupabase(newSite);
   localStorage.setItem('kaifa',JSON.stringify({sites:sites}));
@@ -697,6 +778,79 @@ function fmtMoney(v){
   if(isNaN(n)) return v;
   return n.toLocaleString('zh-TW');
 }
+// ── Admin Management ──
+async function loadAdmins(){
+  try{
+    var data = await sbFetch('admins?select=id,username,name,role,created_at&order=created_at.asc','GET');
+    if(!data) return;
+    g('adminsTbody').innerHTML = data.map(function(a,i){
+      var roleTag = a.role==='super'?'<span style="color:#c0392b;font-weight:bold">總管理員</span>':'<span style="color:#666">管理員</span>';
+      var delBtn = a.role!=='super'?'<button class="bs bg" style="font-size:11px;padding:3px 8px" onclick="deleteAdmin(''+a.id+'')">刪除</button>':'—';
+      return '<tr><td style="color:#aaa;font-size:11px">'+(i+1)+'</td><td>'+a.username+'</td><td>'+a.name+'</td><td>'+roleTag+'</td><td onclick="event.stopPropagation()">'+delBtn+'</td></tr>';
+    }).join('');
+  }catch(e){console.warn('Load admins error:',e)}
+}
+
+function openNewAdminModal(){
+  g('newAdminU').value='';g('newAdminP').value='';g('newAdminN').value='';g('newAdminErr').textContent='';
+  g('adminMv').style.display='flex';
+  setTimeout(function(){g('newAdminU').focus()},100);
+}
+function closeNewAdminModal(){g('adminMv').style.display='none'}
+
+async function createAdmin(){
+  var u=g('newAdminU').value.trim(),p=g('newAdminP').value.trim(),n=g('newAdminN').value.trim();
+  if(!u||!p||!n){g('newAdminErr').textContent='請填寫所有欄位';return}
+  try{
+    var existing = await sbFetch('admins?username=eq.'+encodeURIComponent(u)+'&select=id','GET');
+    if(existing&&existing.length){g('newAdminErr').textContent='此帳號已存在';return}
+    await sbFetch('admins','POST',{id:'admin_'+Date.now(),username:u,password:p,name:n,role:'admin'});
+    closeNewAdminModal();
+    loadAdmins();
+    showToast('✓ 已新增管理員');
+  }catch(e){g('newAdminErr').textContent='新增失敗：'+e.message}
+}
+
+async function deleteAdmin(id){
+  if(!confirm('確定刪除此管理員？'))return;
+  try{
+    await fetch(SB_URL+'/rest/v1/admins?id=eq.'+id,{method:'DELETE',headers:SB_HEADERS});
+    loadAdmins();
+    showToast('✓ 已刪除');
+  }catch(e){showToast('刪除失敗')}
+}
+
+async function changeMyPassword(){
+  var pw=g('newPwInput').value.trim();
+  if(!pw){g('pwMsg').textContent='請輸入新密碼';return}
+  await updatePassword(pw, 'pwMsg');
+  g('newPwInput').value='';
+}
+
+async function changeMyPassword2(){
+  var pw=g('newPwInput2').value.trim();
+  if(!pw){g('pwMsg2').textContent='請輸入新密碼';return}
+  await updatePassword(pw, 'pwMsg2');
+  g('newPwInput2').value='';
+}
+
+async function updatePassword(pw, msgId){
+  try{
+    var resp = await fetch(SB_URL+'/rest/v1/admins?id=eq.'+me.id,{
+      method:'PATCH',
+      headers:Object.assign({},SB_HEADERS,{'Prefer':'return=minimal'}),
+      body:JSON.stringify({password:pw})
+    });
+    if(resp.ok){
+      me.password=pw;
+      g(msgId).textContent='✓ 密碼已更新';
+      setTimeout(function(){g(msgId).textContent=''},2000);
+    } else {
+      g(msgId).textContent='更新失敗';
+    }
+  }catch(e){g(msgId).textContent='更新失敗'}
+}
+
 function showToast(msg){var t=g('toast');t.textContent=msg||'✓';t.classList.add('show');clearTimeout(window._t);window._t=setTimeout(function(){t.classList.remove('show')},1800)}
 </script>
 </body>
