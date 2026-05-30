@@ -386,39 +386,64 @@ async function deleteSiteFromSupabase(id){
   }catch(e){}
 }
 
+// Fallback accounts for when Supabase is unavailable
+var LOCAL_AC=[
+  {id:'super_1',username:'khitshu',password:'khitshu',name:'總管理員',role:'super'},
+  {id:'admin_1',username:'admin',password:'admin123',name:'管理員',role:'admin'}
+];
+
 function handleLogin(){
-  // Sync wrapper for async doLogin
-  doLogin().catch(function(e){
-    g('lerr').textContent='登入失敗：'+e.message;
+  var u=g('inp-u').value.trim(),p=g('inp-pw').value;
+  if(!u||!p){g('lerr').textContent='請輸入帳號密碼';return}
+  
+  // Try local accounts first (instant)
+  var localUser=null;
+  for(var i=0;i<LOCAL_AC.length;i++){
+    if(LOCAL_AC[i].username===u&&LOCAL_AC[i].password===p){localUser=LOCAL_AC[i];break}
+  }
+  
+  if(localUser){
+    afterLogin(localUser);
+    // Also verify with Supabase in background to get latest password
+    verifyWithSupabase(u,p);
+  } else {
+    // Try Supabase
+    g('lerr').textContent='驗證中...';
+    verifyWithSupabase(u,p,true);
+  }
+}
+
+function verifyWithSupabase(u,p,required){
+  fetch(SB_URL+'/rest/v1/admins?username=eq.'+encodeURIComponent(u)+'&select=*',{
+    headers:{'apikey':SB_KEY,'Authorization':'Bearer '+SB_KEY}
+  }).then(function(resp){return resp.json()}).then(function(data){
+    if(data&&data.length){
+      if(data[0].password===p){
+        afterLogin(data[0]);
+      } else if(required){
+        g('lerr').textContent='帳號或密碼錯誤';
+      }
+    } else if(required){
+      g('lerr').textContent='帳號或密碼錯誤';
+    }
+  }).catch(function(e){
+    if(required) g('lerr').textContent='帳號或密碼錯誤';
   });
 }
 
-async function doLogin(){
-  var u=g('inp-u').value.trim(),p=g('inp-pw').value;
-  if(!u||!p){g('lerr').textContent='請輸入帳號密碼';return}
-  g('lerr').textContent='登入中...';
-  try{
-    var data = await sbFetch('admins?username=eq.'+encodeURIComponent(u)+'&select=*','GET');
-    if(!data||!data.length||data[0].password!==p){
-      g('lerr').textContent='帳號或密碼錯誤';return;
-    }
-    me=data[0];
-    g('navun').textContent=me.name;
-    g('lerr').textContent='';
-    g('pg-login').style.display='none';
-    g('pg-main').style.display='block';
-    // Show/hide super admin features
-    if(me.role==='super'){
-      g('superMenu').style.display='';
-    } else {
-      g('superMenu').style.display='none';
-    }
-    try{var d=localStorage.getItem('kaifa');if(d){var p2=JSON.parse(d);sites=p2.sites||[];}renderSites();}catch(e){}
-    loadFromSupabase();
-  }catch(e){
-    g('lerr').textContent='登入失敗，請稍後再試';
-    console.warn('Login error:',e);
+function afterLogin(user){
+  me=user;
+  g('navun').textContent=me.name;
+  g('lerr').textContent='';
+  g('pg-login').style.display='none';
+  g('pg-main').style.display='block';
+  if(me.role==='super'){
+    g('superMenu').style.display='';
+  } else {
+    g('superMenu').style.display='none';
   }
+  try{var d=localStorage.getItem('kaifa');if(d){var p2=JSON.parse(d);sites=p2.sites||[];}renderSites();}catch(e){}
+  loadFromSupabase();
 }
 
 function logout(){
@@ -792,7 +817,7 @@ async function loadAdmins(){
     if(!data) return;
     g('adminsTbody').innerHTML = data.map(function(a,i){
       var roleTag = a.role==='super'?'<span style="color:#c0392b;font-weight:bold">總管理員</span>':'<span style="color:#666">管理員</span>';
-      var delBtn = a.role!=='super'?'<button class="bs bg" style="font-size:11px;padding:3px 8px" onclick="deleteAdmin(''+a.id+'')">刪除</button>':'—';
+      var delBtn = a.role!=='super'?'<button class="bs bg" style="font-size:11px;padding:3px 8px" onclick="deleteAdmin(\'' + a.id + '\')">刪除</button>':'—';
       return '<tr><td style="color:#aaa;font-size:11px">'+(i+1)+'</td><td>'+a.username+'</td><td>'+a.name+'</td><td>'+roleTag+'</td><td onclick="event.stopPropagation()">'+delBtn+'</td></tr>';
     }).join('');
   }catch(e){console.warn('Load admins error:',e)}
