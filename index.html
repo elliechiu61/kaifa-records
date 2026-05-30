@@ -199,6 +199,21 @@ textarea.bta{width:100%;border:none;background:transparent;font-family:inherit;f
   </div>
 </div>
 
+<!-- EDIT ADMIN MODAL -->
+<div class="ov" id="editAdminMv" style="display:none">
+  <div class="modal">
+    <h3>編輯管理員</h3>
+    <div class="mf"><label>帳號</label><input id="editAdminU" type="text" readonly style="background:#f5f5f5;color:#999"></div>
+    <div class="mf"><label>名稱 *</label><input id="editAdminN" type="text" placeholder="顯示名稱"></div>
+    <div class="mf"><label>新密碼（不修改請留空）</label><input id="editAdminP" type="password" placeholder="留空表示不修改"></div>
+    <div style="color:#c0392b;font-size:12px;margin-top:6px;min-height:14px" id="editAdminErr"></div>
+    <div class="ma">
+      <button class="bs bg" onclick="closeEditAdminModal()">取消</button>
+      <button class="bs bp" onclick="saveEditAdmin()">儲存</button>
+    </div>
+  </div>
+</div>
+
 <!-- NEW ADMIN MODAL -->
 <div class="ov" id="adminMv" style="display:none">
   <div class="modal">
@@ -817,10 +832,54 @@ async function loadAdmins(){
     if(!data) return;
     g('adminsTbody').innerHTML = data.map(function(a,i){
       var roleTag = a.role==='super'?'<span style="color:#c0392b;font-weight:bold">總管理員</span>':'<span style="color:#666">管理員</span>';
-      var delBtn = a.role!=='super'?'<button class="bs bg" style="font-size:11px;padding:3px 8px" onclick="deleteAdmin(\'' + a.id + '\')">刪除</button>':'—';
-      return '<tr><td style="color:#aaa;font-size:11px">'+(i+1)+'</td><td>'+a.username+'</td><td>'+a.name+'</td><td>'+roleTag+'</td><td onclick="event.stopPropagation()">'+delBtn+'</td></tr>';
+      var editBtn = '<button class="bs bp" style="font-size:11px;padding:3px 8px;margin-right:4px" onclick="openEditAdminModal(\'' + a.id + '\',\'' + a.username + '\',\'' + a.name + '\')">編輯</button>';
+      var delBtn = a.role!=='super'?editBtn+'<button class="bs bg" style="font-size:11px;padding:3px 8px" onclick="deleteAdmin(\'' + a.id + '\')">刪除</button>':editBtn;
+      return '<tr><td style="color:#aaa;font-size:11px">'+(i+1)+'</td><td>'+a.username+'</td><td>'+a.name+'</td><td>'+roleTag+'</td><td onclick="event.stopPropagation()" style="white-space:nowrap">'+delBtn+'</td></tr>';
     }).join('');
   }catch(e){console.warn('Load admins error:',e)}
+}
+
+var editAdminId = null;
+function openEditAdminModal(id, username, name){
+  editAdminId = id;
+  g('editAdminU').value = username;
+  g('editAdminN').value = name;
+  g('editAdminP').value = '';
+  g('editAdminErr').textContent = '';
+  g('editAdminMv').style.display = 'flex';
+  setTimeout(function(){ g('editAdminN').focus(); }, 100);
+}
+function closeEditAdminModal(){ g('editAdminMv').style.display = 'none'; }
+g('editAdminMv').onclick = function(e){ if(e.target===this) closeEditAdminModal(); };
+
+function saveEditAdmin(){
+  var n = g('editAdminN').value.trim();
+  var p = g('editAdminP').value.trim();
+  if(!n){ g('editAdminErr').textContent = '名稱不能空白'; return; }
+  var updateData = { name: n };
+  if(p) updateData.password = p;
+  fetch(SB_URL+'/rest/v1/admins?id=eq.'+editAdminId, {
+    method: 'PATCH',
+    headers: Object.assign({}, SB_HEADERS, {'Prefer':'return=minimal'}),
+    body: JSON.stringify(updateData)
+  }).then(function(resp){
+    if(resp.ok){
+      closeEditAdminModal();
+      loadAdmins();
+      showToast('✓ 已更新');
+      // Update LOCAL_AC if editing self
+      if(editAdminId === me.id){
+        me.name = n;
+        if(p) me.password = p;
+        g('navun').textContent = me.name;
+        for(var i=0;i<LOCAL_AC.length;i++){
+          if(LOCAL_AC[i].id===me.id){ LOCAL_AC[i].name=n; if(p) LOCAL_AC[i].password=p; }
+        }
+      }
+    } else {
+      g('editAdminErr').textContent = '儲存失敗';
+    }
+  }).catch(function(){ g('editAdminErr').textContent = '儲存失敗'; });
 }
 
 function openNewAdminModal(){
