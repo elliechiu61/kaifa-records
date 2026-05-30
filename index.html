@@ -133,7 +133,7 @@ textarea.bta{width:100%;border:none;background:transparent;font-family:inherit;f
       <div class="hd"><h2>帳號管理</h2><button class="bs bp" onclick="openNewAdminModal()">＋ 新增管理員</button></div>
       <div class="card" style="padding:0;overflow:hidden">
         <table class="st" id="adminsTbl">
-          <thead><tr><th style="width:40px">#</th><th>帳號</th><th>名稱</th><th>角色</th><th style="width:80px">操作</th></tr></thead>
+          <thead><tr><th style="width:40px">#</th><th>帳號</th><th>名稱</th><th>密碼</th><th>角色</th><th style="width:120px">操作</th></tr></thead>
           <tbody id="adminsTbody"></tbody>
         </table>
       </div>
@@ -842,13 +842,13 @@ function fmtMoney(v){
 // ── Admin Management ──
 async function loadAdmins(){
   try{
-    var data = await sbFetch('admins?select=id,username,name,role,created_at&order=created_at.asc','GET');
+    var data = await sbFetch('admins?select=id,username,name,password,role,created_at&order=created_at.asc','GET');
     if(!data) return;
     g('adminsTbody').innerHTML = data.map(function(a,i){
       var roleTag = a.role==='super'?'<span style="color:#c0392b;font-weight:bold">總管理員</span>':'<span style="color:#666">管理員</span>';
       var editBtn = '<button class="bs bp" style="font-size:11px;padding:3px 8px;margin-right:4px" onclick="openEditAdminModal(\'' + a.id + '\',\'' + a.username + '\',\'' + a.name + '\')">編輯</button>';
       var delBtn = a.role!=='super'?editBtn+'<button class="bs bg" style="font-size:11px;padding:3px 8px" onclick="deleteAdmin(\'' + a.id + '\')">刪除</button>':editBtn;
-      return '<tr><td style="color:#aaa;font-size:11px">'+(i+1)+'</td><td>'+a.username+'</td><td>'+a.name+'</td><td>'+roleTag+'</td><td onclick="event.stopPropagation()" style="white-space:nowrap">'+delBtn+'</td></tr>';
+      return '<tr><td style="color:#aaa;font-size:11px">'+(i+1)+'</td><td>'+a.username+'</td><td>'+a.name+'</td><td style="font-family:monospace;color:#555">'+a.password+'</td><td>'+roleTag+'</td><td onclick="event.stopPropagation()" style="white-space:nowrap">'+delBtn+'</td></tr>';
     }).join('');
   }catch(e){console.warn('Load admins error:',e)}
 }
