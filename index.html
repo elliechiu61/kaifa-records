@@ -136,12 +136,12 @@ textarea.bta{width:100%;border:none;background:transparent;font-family:inherit;f
           <tbody id="adminsTbody"></tbody>
         </table>
       </div>
-      <div class="card" style="margin-top:16px">
+      <div class="card">
         <div class="ctitle">修改我的密碼</div>
         <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
-          <input id="newPwInput" type="password" placeholder="新密碼" style="padding:8px 12px;border:1px solid #ddd;border-radius:6px;font-size:13px;flex:1;min-width:150px">
-          <button class="bs bp" onclick="changeMyPassword()">確認修改</button>
-          <span id="pwMsg" style="font-size:12px;color:#2a6a2a"></span>
+          <input id="newPwInput" type="password" placeholder="輸入新密碼" style="padding:8px 12px;border:1px solid #ddd;border-radius:6px;font-size:13px;flex:1;min-width:150px">
+          <button class="bs bp" onclick="changeMyPassword('newPwInput','pwMsg')">確認修改</button>
+          <span id="pwMsg" style="font-size:12px;color:#2a6a2a;font-weight:bold"></span>
         </div>
       </div>
     </div>
@@ -174,11 +174,11 @@ textarea.bta{width:100%;border:none;background:transparent;font-family:inherit;f
         <div style="font-size:12px;text-align:center;margin-top:8px;min-height:18px;color:#888" id="sm1"></div>
       </div>
       <div class="card">
-        <div class="ctitle">修改密碼</div>
+        <div class="ctitle">修改我的密碼</div>
         <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
-          <input id="newPwInput2" type="password" placeholder="新密碼" style="padding:8px 12px;border:1px solid #ddd;border-radius:6px;font-size:13px;flex:1;min-width:150px">
-          <button class="bs bp" onclick="changeMyPassword2()">確認修改</button>
-          <span id="pwMsg2" style="font-size:12px;color:#2a6a2a"></span>
+          <input id="newPwInput2" type="password" placeholder="輸入新密碼" style="padding:8px 12px;border:1px solid #ddd;border-radius:6px;font-size:13px;flex:1;min-width:150px">
+          <button class="bs bp" onclick="changeMyPassword('newPwInput2','pwMsg2')">確認修改</button>
+          <span id="pwMsg2" style="font-size:12px;color:#2a6a2a;font-weight:bold"></span>
         </div>
       </div>
       <div class="card">
@@ -852,35 +852,33 @@ async function deleteAdmin(id){
   }catch(e){showToast('刪除失敗')}
 }
 
-async function changeMyPassword(){
-  var pw=g('newPwInput').value.trim();
-  if(!pw){g('pwMsg').textContent='請輸入新密碼';return}
-  await updatePassword(pw, 'pwMsg');
-  g('newPwInput').value='';
-}
-
-async function changeMyPassword2(){
-  var pw=g('newPwInput2').value.trim();
-  if(!pw){g('pwMsg2').textContent='請輸入新密碼';return}
-  await updatePassword(pw, 'pwMsg2');
-  g('newPwInput2').value='';
-}
-
-async function updatePassword(pw, msgId){
-  try{
-    var resp = await fetch(SB_URL+'/rest/v1/admins?id=eq.'+me.id,{
-      method:'PATCH',
-      headers:Object.assign({},SB_HEADERS,{'Prefer':'return=minimal'}),
-      body:JSON.stringify({password:pw})
-    });
+function changeMyPassword(inputId, msgId){
+  var pw = g(inputId).value.trim();
+  if(!pw){ g(msgId).textContent='請輸入新密碼'; g(msgId).style.color='#c0392b'; return; }
+  g(msgId).textContent='更新中...'; g(msgId).style.color='#888';
+  fetch(SB_URL+'/rest/v1/admins?id=eq.'+me.id, {
+    method:'PATCH',
+    headers:Object.assign({},SB_HEADERS,{'Prefer':'return=minimal'}),
+    body:JSON.stringify({password:pw})
+  }).then(function(resp){
     if(resp.ok){
       me.password=pw;
+      // Update LOCAL_AC too
+      for(var i=0;i<LOCAL_AC.length;i++){
+        if(LOCAL_AC[i].id===me.id) LOCAL_AC[i].password=pw;
+      }
+      g(inputId).value='';
       g(msgId).textContent='✓ 密碼已更新';
-      setTimeout(function(){g(msgId).textContent=''},2000);
+      g(msgId).style.color='#2a6a2a';
+      setTimeout(function(){g(msgId).textContent=''},3000);
     } else {
       g(msgId).textContent='更新失敗';
+      g(msgId).style.color='#c0392b';
     }
-  }catch(e){g(msgId).textContent='更新失敗'}
+  }).catch(function(e){
+    g(msgId).textContent='更新失敗';
+    g(msgId).style.color='#c0392b';
+  });
 }
 
 function showToast(msg){var t=g('toast');t.textContent=msg||'✓';t.classList.add('show');clearTimeout(window._t);window._t=setTimeout(function(){t.classList.remove('show')},1800)}
